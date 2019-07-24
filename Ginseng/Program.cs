@@ -40,7 +40,7 @@ namespace 산삼
         static void Main(string[] args)
         {
             char[,] ginseng = new char[MaxSize, MaxSize];
-            Random random = new Random();
+            Random random = new Random(DateTime.Now.Ticks.GetHashCode());
             
             List<Point> direction = new List<Point>();
             direction.Add(new Point(-1, 0));    //좌
@@ -76,6 +76,7 @@ namespace 산삼
                 randomRoot.X = startPoint[startPointRand].X;
                 randomRoot.Y = startPoint[startPointRand].Y;
                 int rootLength = random.Next(0, 4) + 6;
+
                 /*
                 Console.WriteLine("{0}주기", (i + 1));
                 foreach(Point data in startPoint)
@@ -85,25 +86,119 @@ namespace 산삼
                 Console.WriteLine("시작위치개수 : {0}", startPoint.Count);
                 Console.WriteLine("시작 위치 : {0}, {1}", randomRoot.X, randomRoot.Y);
                 */
-                CreateRoot(ref ginseng, direction,ref randomRoot, rootLength, 1, 0);
+
+                CreateRoot(ref ginseng, direction,ref randomRoot, --rootLength, 2);
             }
 
             Print(ref ginseng);
         }
 
         // 뿌리를 생성하는 함수 CreateRoot
-        static void CreateRoot(ref char[,] map , List<Point> direction,ref Point randomRoot, int rootLength,int order,int frontRand)
+        static bool CreateRoot(ref char[,] map , List<Point> direction,ref Point randomRoot, int rootLength,int order)
         {
             //뿌리 길이가 0 미만일경우 return
             if (rootLength <= 0)
-                return;
-            Random random = new Random();
+                return true;
+            Random random = new Random(DateTime.Now.Ticks.GetHashCode());
             List<Point> copyDirection = new List<Point>();
             copyDirection = direction.ToList<Point>();
             int rand = random.Next(4);
-            Point dir = new Point(); ;
+            Point dir = new Point();
             int i = 0;
 
+            if(order == 2)  //첫 번째 주기
+            {
+                map[randomRoot.X, randomRoot.Y] = (char)(48 + order - 1);
+                if (randomRoot.X == 3)      // 좌측 이동
+                    dir = copyDirection[0];
+                else if (randomRoot.X == 8) // 우측 이동
+                    dir = copyDirection[1];
+                else if (randomRoot.Y == 3) // 위로 이동
+                    dir = copyDirection[3];
+                else if (randomRoot.Y == 8) // 아래로 이동
+                    dir = copyDirection[2];
+                else
+                    dir = copyDirection[rand];
+                randomRoot.X += dir.X;
+                randomRoot.Y += dir.Y;
+                map[randomRoot.X, randomRoot.Y] = (char)(48 + order);
+                
+            }
+            else
+            {
+                /*
+                Console.WriteLine("\n");
+                Console.WriteLine("현재 좌표 : {0}", order - 1);
+
+                Console.WriteLine("--------제거 전 좌표-----------");
+
+                foreach (Point tmp in copyDirection)
+                {
+                    Console.WriteLine("{0}, {1}", tmp.Y, tmp.X);
+                }
+                */
+
+                // 범위 초과되는 부분 제거
+                if (randomRoot.X <= 0)       // 좌측으로 갈 수 없을 시 좌측 제거
+                    copyDirection.Remove(copyDirection[0]);
+                else if (randomRoot.X >= 11) // 우측으로 갈 수 없을 시 우측 제거
+                    copyDirection.Remove(copyDirection[1]);
+                else if (randomRoot.Y <= 0)  // 위로 갈 수 없을 시 위쪽 제거
+                    copyDirection.Remove(copyDirection[3]);
+                else if (randomRoot.Y >= 11) // 아래로 갈 수 없을 시 아래쪽 제거
+                    copyDirection.Remove(copyDirection[2]);
+
+                List<Point> deleteDir = new List<Point>();
+           
+                for(int k=0; k<copyDirection.Count; k++)
+                {
+                    // k번째 요소가 0이 아닐경우 삭제
+                    if (map[randomRoot.X + copyDirection[k].X, randomRoot.Y + copyDirection[k].Y] != '0')
+                    {
+                        copyDirection.Remove(copyDirection[k]);
+                        k--;
+                    }
+                }
+
+                int max = copyDirection.Count;
+                deleteDir.Clear();
+                
+                /*
+                Console.WriteLine("--------제거 후 좌표-----------");
+
+                foreach (Point tmp in copyDirection)
+                {
+                    Console.WriteLine("{0}, {1}", tmp.Y, tmp.X);
+                }
+                Console.WriteLine("-------------------------------");
+
+                */
+                //남은 것으로 랜덤 돌림
+                if (copyDirection.Count != 0)
+                {
+                    /*
+                    Console.WriteLine("남은 좌표 ");
+                    foreach(Point temp in copyDirection)
+                    {
+                        Console.WriteLine("{0}, {1}", temp.Y, temp.X);
+                    }
+                    */
+                    
+                    dir = copyDirection[random.Next(copyDirection.Count)];
+                    map[randomRoot.X + dir.X, randomRoot.Y + dir.Y] = (char)(48 + order);
+                    randomRoot.X += dir.X;
+                    randomRoot.Y += dir.Y;
+                }
+                else
+                {
+                    return false;
+                }
+                
+                //Console.Clear();
+                //Print(ref map);
+
+            }
+            /*
             for (i = 0; i < 4; i++)
             {
                 if (order == 1)
@@ -128,6 +223,7 @@ namespace 산삼
                 // 안 막혀있을 시
                 if (((randomRoot.X + dir.X) > 0 && (randomRoot.X + dir.X < 12)) && ((randomRoot.Y + dir.Y > 0) && (randomRoot.Y + dir.Y < 12)))
                 {
+                    // 갈 위치가 0인 경우에만 이동
                     if (map[randomRoot.X + dir.X, randomRoot.Y + dir.Y] == '0')
                     {
                         // 연산자 오버로딩으로 대체 가능
@@ -137,13 +233,23 @@ namespace 산삼
                         break;
                     }
                 }
+                Console.Clear();
+                Print(ref map);
+                
                 // 막혀있을 시
                 copyDirection.RemoveAt(rand);
                 rand = random.Next(3 - i);
+                
             }
             if (i == 4) //4방향 전부 막힌 경우
                 return;
-            CreateRoot(ref map, direction, ref randomRoot, --rootLength, ++order, rand);
+            */
+
+            if(CreateRoot(ref map, direction, ref randomRoot, --rootLength, ++order) == false)
+            {
+                CreateRoot(ref map, direction, ref randomRoot, rootLength, order);
+            }
+            return true;
         }
 
         // 시작 포인트를 리스트에 담아주는 함수 StartPointPush
